@@ -1,3 +1,6 @@
+#ifndef COMMON_H
+#define COMMON_H
+
 namespace fauna {
 
   struct Date {
@@ -6,3 +9,5 @@ namespace fauna {
     unsigned short year;
   };
 };
+
+#endif // COMMON_H

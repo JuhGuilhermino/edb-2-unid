@@ -29,14 +29,16 @@ private:
     INCLUDE_ANIMAL = 1,
     REMOVE_ANIMAL,
     READ_ANIMAL,
-    CONSULT_ANIMAL,
+    CONSULT_ANIMAL_HISTORY,
     SAVE_FILE,
     HELP,
     QUIT,
+    INVALID,
   };
 
   e_state m_state;
   e_menu_option m_selected_option;
+  std::string m_error_msg;
 
   //!< Methods
   void print_menu();
