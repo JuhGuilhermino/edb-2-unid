@@ -2,7 +2,7 @@
 #define HISTORY_H
 
 #include <string>
-#include <common.h>
+#include "common.h"
 
 using namespace fauna;
 

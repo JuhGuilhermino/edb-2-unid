@@ -37,6 +37,7 @@ private:
   };
 
   e_state m_state;
+  std::string m_file_path;
   e_menu_option m_selected_option;
   std::string m_error_msg;
 
@@ -48,14 +49,15 @@ private:
   void print_animals();
   void print_animal_history();
 
+  void read_file();
 public:
   void initialize(int argc, char* argv[]);
-
   bool has_finished();
 
   void process_events();
   void update();
   void render() const;
+  void usage() const;
 };
 
 #endif

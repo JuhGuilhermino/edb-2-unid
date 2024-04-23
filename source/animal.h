@@ -18,7 +18,6 @@ private:
   std::string m_name;
   std::string m_species;
   std::string m_genre;
-  std::string m_genre;
   fauna::Date m_monitored_at;
   fauna::Date m_born_at;
 

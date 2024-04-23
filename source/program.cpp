@@ -1,15 +1,81 @@
-#include <program.h>
-#include <common.h>
+#include "program.h"
+#include "common.h"
 #include <iostream>
 #include <string>
+#include <fstream>
+#include <sstream>
 
 using namespace fauna;
+
+void Program::usage() const {
+  std::cerr
+    << "Usage: fauna [-f <file_relative_path>] [--help]\n"
+    << "  Program Options:\n"
+    << "    -f     <file_relative_path> Caminho do arquivo de registro de faun.\n"
+    << "    --help       Imprime esse texto de ajuda.\n";
+  std::cerr << std::endl;
+
+  exit(0);
+}
+
+void Program::read_file() {
+  std::ifstream ifs(m_file_path);
+  std::ostringstream oss;
+
+  if (ifs.is_open()) {
+    oss << ">>> Abrindo arquivo [" << m_file_path << "]\n"
+      << ">>> Processando dados...\n";
+    // std::cout << Color::tcolor(oss.str(), Color::GREEN);
+
+    while (ifs) {
+      // SBoard board;
+      // short board_numbers[SB_LINEAR_SIZE];
+
+      // for (int i = 0; i < SB_LINEAR_SIZE; i++)
+      //   if (!(ifs >> board_numbers[i]))
+      //     break;
+
+      // board.set_board(board_numbers);
+      // if (!board.is_board_valid()) {
+      //   // coms::Warning("Found a invalid board at position " + std::to_string(m_puzzles.size() + 1) + " of the list.");
+      //   continue;
+      // }
+
+      // add_board(board);
+    }
+  }
+  else {
+    // coms::Error("Can't open the file, make shure the path it's correct and have content.");
+  }
+
+  // if (m_puzzles.size() < 0) {
+  //   coms::Error("Not valid puzzle found!");
+  // }
+
+  // m_player_board.set_puzzle(m_puzzles[0]);
+
+  oss.str("");
+  oss << ">>> Arquivo lido com sucesso. " << 10 << " registros encontrados.";
+  std::cout << oss.str() << "\n\n";
+}
+
 
 void Program::initialize(int argc, char* argv[]) {
   m_state = e_state::STARTING;
   m_error_msg = "";
 
-  // TODO: Checar parâmetros e ler arquivos
+  for (int i = 1; i < argc; i++) {
+    std::string current_arg{ argv[i] };
+
+    if (current_arg[0] == '-') {
+      if (current_arg == "-f") {
+        // TODO: ler arquivo
+      }
+      else if (current_arg == "-h" || current_arg == "--help") {
+        usage();
+      }
+    }
+  }
 }
 
 bool Program::has_finished() {
