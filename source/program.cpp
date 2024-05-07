@@ -8,87 +8,17 @@
 #include <memory>
 #include <vector>
 
+#define RESET   "\033[0m"
+#define RED     "\033[31m"      /* Red */
+#define GREEN   "\033[32m"      /* Green */
+#define YELLOW  "\033[33m"      /* Yellow */
+#define BLUE    "\033[34m"      /* Blue */
+#define MAGENTA "\033[35m"      /* Magenta */
+#define CYAN    "\033[36m"      /* Cyan */
+#define WHITE   "\033[37m"      /* White */
+#define BOLD    "\033[1m"       /* Bold */
 
-#pragma region CONFIG_METHODS
-
-void Program::usage() const {
-  std::cerr
-    << "Usage: fauna [-f <file_relative_path>] [-h, --help]\n"
-    << "  Opções:\n"
-    << "    -f     <file_relative_path> Caminho do arquivo de registro de faun.\n"
-    << "    -h, --help       Imprime esse texto de ajuda.\n";
-  std::cerr << std::endl;
-
-  exit(0);
-}
-
-void Program::read_file() {
-  std::ifstream ifs(m_file_path);
-  std::ostringstream oss;
-
-  if (ifs.is_open()) {
-    oss << ">>> Abrindo arquivo [" << m_file_path << "]\n"
-      << ">>> Processando dados...\n";
-    // std::cout << Color::tcolor(oss.str(), Color::GREEN);
-
-    while (ifs) {
-      // SBoard board;
-      // short board_numbers[SB_LINEAR_SIZE];
-
-      // for (int i = 0; i < SB_LINEAR_SIZE; i++)
-      //   if (!(ifs >> board_numbers[i]))
-      //     break;
-
-      // board.set_board(board_numbers);
-      // if (!board.is_board_valid()) {
-      //   // coms::Warning("Found a invalid board at position " + std::to_string(m_puzzles.size() + 1) + " of the list.");
-      //   continue;
-      // }
-
-      // add_board(board);
-    }
-  }
-  else {
-    // coms::Error("Can't open the file, make shure the path it's correct and have content.");
-  }
-
-  // if (m_puzzles.size() < 0) {
-  //   coms::Error("Not valid puzzle found!");
-  // }
-
-  // m_player_board.set_puzzle(m_puzzles[0]);
-
-  oss.str("");
-  oss << ">>> Arquivo lido com sucesso. " << 10 << " registros encontrados.";
-  std::cout << oss.str() << "\n\n";
-}
-
-void Program::initialize(int argc, char* argv[]) {
-  m_state = e_state::STARTING;
-  m_error_msg = "";
-
-  for (int i = 1; i < argc; i++) {
-    std::string current_arg{ argv[i] };
-
-    if (current_arg[0] == '-') {
-      if (current_arg == "-f") {
-        // TODO: ler arquivo
-      }
-      else if (current_arg == "-h" || current_arg == "--help") {
-        usage();
-      }
-    }
-  }
-  std::cout << ">>> DEBUG: Inicializado";
-}
-
-bool Program::has_finished() {
-  return m_state == e_state::QUITTING;
-}
-
-#pragma endregion
-
-#pragma region USER_INTERACTIONS
+#pragma region UTILS
 
 std::vector<std::string> tokenize(const std::string& str, const char& separator) {
   std::vector<std::string> tokens;
@@ -101,14 +31,83 @@ std::vector<std::string> tokenize(const std::string& str, const char& separator)
 
   return tokens;
 }
+std::string padStart(const std::string& input, size_t targetLength, char padChar = ' ') {
+  if (input.length() >= targetLength) {
+    return input;
+  }
+  return std::string(targetLength - input.length(), padChar) + input;
+}
 
-void Program::read_animal() {
+#pragma endregion
+
+#pragma region CONFIG_METHODS
+
+void Program::usage() const {
+  std::cerr
+    << "Usage: fauna [-f <file_relative_path>] [-h, --help]\n"
+    << "  Opções:\n"
+    << "    -f     <file_relative_path> Caminho do arquivo de registro de faun.\n"
+    << "    -h, --help       Imprime esse texto de ajuda.\n";
+
+  exit(0);
+}
+
+void Program::read_file() {
+  std::ifstream ifs(m_file_path);
+  std::ostringstream oss;
+
+  if (ifs.is_open()) {
+    oss << ">>> Abrindo arquivo [" << m_file_path << "]\n"
+      << ">>> Processando dados...\n";
+
+    while (ifs) {
+      std::string line;
+      std::getline(ifs, line);
+      if (line.empty()) continue;
+
+      Animal animal = parse_animal(line);
+      m_animals.push_back(std::make_shared<Animal>(animal));
+    }
+  }
+  else {
+  }
+
+  oss << ">>> Arquivo lido com sucesso. " << m_animals.size() << " registros encontrados.";
+  std::cout << oss.str() << "\n\n";
+}
+
+void Program::initialize(int argc, char* argv[]) {
+  m_state = e_state::STARTING;
+  m_error_msg = "";
+  m_file_path = ".\\data\\fauna-1.txt";
+  for (int i = 1; i < argc; i++) {
+    std::string current_arg{ argv[i] };
+
+    if (current_arg[0] == '-') {
+      if (current_arg == "-f") {
+        std::string file_path = argv[i + 1];
+        m_file_path = file_path;
+
+      }
+      else if (current_arg == "-h" || current_arg == "--help") {
+        usage();
+      }
+    }
+  }
+}
+
+bool Program::has_finished() {
+  return m_state == e_state::QUITTING;
+}
+
+#pragma endregion
+
+#pragma region USER_INTERACTIONS
+
+Animal Program::parse_animal(const std::string& animal_str) {
   Animal animal;
 
-  std::string line;
-  std::getline(std::cin, line);
-
-  auto tokens = tokenize(line, ';');
+  auto tokens = tokenize(animal_str, ';');
 
   animal.m_id = std::stoi(tokens.at(0));
   animal.m_name = tokens.at(1);
@@ -123,12 +122,36 @@ void Program::read_animal() {
   animal.m_monitored_at = monitoring_at;
   animal.m_born_at = birth_date;
 
+  return animal;
+}
+
+void Program::read_animal() {
+  Animal animal;
+
+  std::string line;
+  std::getline(std::cin, line);
+
+  animal = parse_animal(line);
+
   m_animals.push_back(std::make_shared<Animal>(animal));
+  m_msg = "Animal adicionado!";
+}
+
+void Program::remove_animal() {
+  int animal_id;
+  std::string line;
+  std::getline(std::cin, line);
+
+  animal_id = std::stoi(line);
+
+  m_msg = "Animal " + std::to_string(animal_id) + " removido!";
 }
 
 #pragma endregion
 
 void Program::process_events() {
+  m_error_msg = "";
+  m_msg = "";
   if (m_state == e_state::READING_MENU_OPT) {
     std::string line;
     std::getline(std::cin, line);
@@ -150,8 +173,17 @@ void Program::process_events() {
       m_selected_option = e_menu_option::INVALID;
     }
   }
+  else if (m_state == e_state::READING_FILE) {
+    read_file();
+  }
   else if (m_state == e_state::INCLUDING_ANIMAL) {
     read_animal();
+  }
+  else if (m_state == e_state::REMOVING_ANIMAL) {
+    remove_animal();
+  }
+  else if (m_state == e_state::STARTING) {
+
   }
   else {
     std::string line;
@@ -160,6 +192,8 @@ void Program::process_events() {
 }
 
 void Program::update() {
+  // std::cout << ">>> Update: " << m_state << "\n";
+
   if (m_state == e_state::READING_MENU_OPT) {
     if (m_selected_option == e_menu_option::HELP)
       m_state = e_state::HELPING;
@@ -172,18 +206,32 @@ void Program::update() {
       m_state = e_state::CONSULTING_ANIMALS;
     }
     else if (m_selected_option == e_menu_option::SAVE_FILE) {}
-    else if (m_selected_option == e_menu_option::REMOVE_ANIMAL) {}
+    else if (m_selected_option == e_menu_option::REMOVE_ANIMAL) {
+      m_state = e_state::REMOVING_ANIMAL;
+    }
     else if (m_selected_option == e_menu_option::READ_ANIMAL) {}
     else if (m_selected_option == e_menu_option::INVALID) {}
   }
   else if (
     m_state == e_state::HELPING
-    || m_state == e_state::STARTING
     || m_state == e_state::INCLUDING_ANIMAL
     || m_state == e_state::CONSULTING_ANIMALS
     || m_state == e_state::CONSULTING_ANIMAL_HISTORY
+    || m_state == e_state::REMOVING_ANIMAL
     ) {
     m_state = e_state::READING_MENU_OPT;
+  }
+  else if (m_state == e_state::WELCOMING) {
+    m_state = e_state::READING_MENU_OPT;
+  }
+  else if (m_state == e_state::STARTING) {
+    if (!m_file_path.empty())
+      m_state = e_state::READING_FILE;
+    else
+      m_state = e_state::WELCOMING;
+  }
+  else if (m_state == e_state::READING_FILE) {
+    m_state = e_state::WELCOMING;
   }
   else if (m_state == e_state::SAVING_FILE) {
 
@@ -200,8 +248,10 @@ void Program::update() {
 }
 
 void Program::render() const {
-  if (m_state == e_state::STARTING) { std::cout << "Iniciou"; }
-  else if (m_state == e_state::READING_FILE) { std::cout << "Lendo arquivo"; }
+  if (m_state == e_state::WELCOMING) {
+    print_welcome();
+  }
+  else if (m_state == e_state::READING_FILE) {}
   else if (m_state == e_state::READING_MENU_OPT) {
     print_menu();
   }
@@ -218,36 +268,61 @@ void Program::render() const {
     print_animals();
   }
   else if (m_state == e_state::READING_ANIMAL) {}
-  else if (m_state == e_state::REMOVING_ANIMAL) {}
+  else if (m_state == e_state::REMOVING_ANIMAL) {
+    std::cout << "Digite o código do animal:\n"
+      << ">>> ";
+  }
   else if (m_state == e_state::CONSULTING_ANIMAL_HISTORY) {}
   else if (m_state == e_state::SAVING_FILE) {}
+  else if (m_state == e_state::READING_FILE) {
+
+  }
 }
 
 #pragma region RENDER_METHODS
 
+void Program::print_welcome() const {
+  std::cout
+    << BLUE << "Mensagem de boas vindas\n\n"
+    << GREEN << ">>> Pressione Enter para iniciar...";
+}
+
+void Program::print_reading_file() const {
+  std::cout << YELLOW << ">>> Lendo arquivo (" << BOLD << m_file_path << RESET << YELLOW << ")...\n\n";
+}
+
 void Program::print_menu() const {
-  std::cout << "----------------------- Gestão de fauna do parque -----------------------\n"
-    << "| Selecione uma opção:\n"
-    << "| 1: Incluir animal\n"
-    << "| 2: Consultar animais\n"
-    << "| 3: Ler animal\n"
-    << "| 4: Remover animal\n"
-    << "| 5: Salvar arquivo\n"
-    << "| 6: Ajuda\n"
-    << "| 7: Sair\n\n"
+  std::cout << "\n\n"
+    << BLUE << "----------------------- Gestão de fauna do parque ------------------------\n"
+    << "| "
+    << padStart(std::to_string(1), 4, '0')
+    << " Animais cadastrados                                               |\n"
+    << "| Selecione uma opção:                                                   |\n"
+    << "|                                                                        |\n"
+    << "| 1: Incluir animal                                                      |\n"
+    << "| 2: Consultar animais                                                   |\n"
+    << "| 3: Ler animal                                                          |\n"
+    << "| 4: Remover animal                                                      |\n"
+    << "| 5: Salvar arquivo                                                      |\n"
+    << "| 6: Ajuda                                                               |\n"
+    << "| 7: Sair                                                                |\n"
+    << "--------------------------------------------------------------------------\n\n"
+    << RED << "ERROR: [" << m_error_msg << "]\n" << RESET
+    << YELLOW << "MSG: [" << m_msg << "]\n\n" << RESET
     << ">>> ";
 }
 
 void Program::print_include_animal() const {
   std::cout
-    << "Inclusão de animal: \n"
-    << ">>> Insira os dados no formato:\n"
-    << "<ID (numérico)>;<Nome>;<Espécie>;<Gênero>;<Data de Monitoramento (dd/MM/yyyy)>;<Data de Nascimento (dd/MM/yyyy)>\n";
+    << BLUE << BOLD << "Inclusão de animal\n" << RESET
+    << YELLOW << "Insira os dados no formato:\n"
+    << "<ID (numérico)>;<Nome>;<Espécie>;<Gênero>;<Data de Monitoramento (dd/MM/yyyy)>;<Data de Nascimento (dd/MM/yyyy)>\n\n"
+    << RESET << ">>> ";
 }
 
 void Program::print_animals() const {
   auto itr = m_animals.begin();
-  std::cout << "Animais: \n";
+  std::cout << BLUE << BOLD << "Animais:\n\n" << RESET;
 
   while (itr != m_animals.end()) {
     std::shared_ptr<Animal> animal = *itr;
@@ -257,18 +332,18 @@ void Program::print_animals() const {
     ++itr;
   }
 
-  std::cout << "\n>>> Pressione Enter para continuar...\n";
+  std::cout << GREEN << "\n>>> Pressione Enter para voltar ao menu...\n";
 }
 
 void Program::print_help() const {
   std::cout
-    << "<HELP>\n"
-    << ">>> Pressione Enter para continuar\n";
+    << BLUE << "<HELP>\n"
+    << GREEN << ">>> Pressione Enter para voltar ao menu...\n";
 }
 
 void Program::print_exit() const {
   std::cout
-    << "<QUITTING>\n";
+    << "<QUITTING>\n\n";
 }
 
 #pragma endregion

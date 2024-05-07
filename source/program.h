@@ -15,6 +15,7 @@ private:
     STARTING,
     READING_FILE,
     READING_MENU_OPT,
+    WELCOMING,
 
     INCLUDING_ANIMAL,
     REMOVING_ANIMAL,
@@ -41,12 +42,15 @@ private:
   std::string m_file_path;
   e_menu_option m_selected_option;
   std::string m_error_msg;
+  std::string m_msg;
   fauna m_animals;
 
   //!< Methods
+  void print_welcome() const;
   void print_menu() const;
   void print_help() const;
   void print_exit() const;
+  void print_reading_file() const;
   void print_include_animal() const;
 
   void print_animals() const;
@@ -54,6 +58,9 @@ private:
 
   void read_file();
   void read_animal();
+  void remove_animal();
+
+  Animal parse_animal(const std::string& animals_str);
 
 public:
   void initialize(int argc, char* argv[]);
