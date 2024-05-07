@@ -9,10 +9,10 @@ using namespace fauna;
 
 void Program::usage() const {
   std::cerr
-    << "Usage: fauna [-f <file_relative_path>] [--help]\n"
-    << "  Program Options:\n"
+    << "Usage: fauna [-f <file_relative_path>] [-h, --help]\n"
+    << "  Opções:\n"
     << "    -f     <file_relative_path> Caminho do arquivo de registro de faun.\n"
-    << "    --help       Imprime esse texto de ajuda.\n";
+    << "    -h, --help       Imprime esse texto de ajuda.\n";
   std::cerr << std::endl;
 
   exit(0);
@@ -76,6 +76,7 @@ void Program::initialize(int argc, char* argv[]) {
       }
     }
   }
+  std::cout << ">>> DEBUG: Inicializado";
 }
 
 bool Program::has_finished() {
@@ -102,23 +103,36 @@ void Program::process_events() {
       m_selected_option = e_menu_option::INVALID;
     }
   }
+  else {
+    std::string line;
+    std::getline(std::cin, line);
+  }
 }
 
 void Program::update() {
-  if (m_selected_option == e_menu_option::HELP) {}
-  else if (m_selected_option == e_menu_option::QUIT) {}
-  else if (m_selected_option == e_menu_option::INCLUDE_ANIMAL) {}
-  else if (m_selected_option == e_menu_option::CONSULT_ANIMAL_HISTORY) {}
-  else if (m_selected_option == e_menu_option::SAVE_FILE) {}
-  else if (m_selected_option == e_menu_option::REMOVE_ANIMAL) {}
-  else if (m_selected_option == e_menu_option::READ_ANIMAL) {}
-  else if (m_selected_option == e_menu_option::INVALID) {}
+  std::cout << ">>> UPDATE DEBUG: " << m_state << "\n";
+
+  if (m_state == e_state::STARTING) {
+    m_state = e_state::READING_MENU_OPT;
+  }
+  else if (m_state == e_state::READING_MENU_OPT) {
+    if (m_selected_option == e_menu_option::HELP) {}
+    else if (m_selected_option == e_menu_option::QUIT) {}
+    else if (m_selected_option == e_menu_option::INCLUDE_ANIMAL) {}
+    else if (m_selected_option == e_menu_option::CONSULT_ANIMAL_HISTORY) {}
+    else if (m_selected_option == e_menu_option::SAVE_FILE) {}
+    else if (m_selected_option == e_menu_option::REMOVE_ANIMAL) {}
+    else if (m_selected_option == e_menu_option::READ_ANIMAL) {}
+    else if (m_selected_option == e_menu_option::INVALID) {}
+  }
 }
 
 void Program::render() const {
-  if (m_state == e_state::STARTING) {}
-  else if (m_state == e_state::READING_FILE) {}
-  else if (m_state == e_state::READING_MENU_OPT) {}
+  if (m_state == e_state::STARTING) { std::cout << "Iniciou"; }
+  else if (m_state == e_state::READING_FILE) { std::cout << "Lendo arquivo"; }
+  else if (m_state == e_state::READING_MENU_OPT) {
+    print_menu();
+  }
   else if (m_state == e_state::HELPING) {}
   else if (m_state == e_state::QUITTING) {}
   else if (m_state == e_state::INCLUDING_ANIMAL) {}
@@ -128,3 +142,13 @@ void Program::render() const {
   else if (m_state == e_state::SAVING_FILE) {}
 }
 
+void Program::print_menu() const {
+  std::cout << "----------------------- Gestão de fauna do parque -----------------------\n"
+    << "| 1: Incluir animal\n"
+    << "| 2: Consultar animais\n"
+    << "| 3: Ler animal\n"
+    << "| 4: Remover animal\n"
+    << "| 5: Salvar arquivo\n"
+    << "| 6: Ajuda\n"
+    << "| 7: Sair\n";
+}

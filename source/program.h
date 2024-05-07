@@ -42,7 +42,7 @@ private:
   std::string m_error_msg;
 
   //!< Methods
-  void print_menu();
+  void print_menu() const;
   void print_help();
   void print_exit();
 
