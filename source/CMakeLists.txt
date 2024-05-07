@@ -18,11 +18,14 @@ set( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COMPILE_FLAGS} ${PREPROCESSING_F
 include_directories( lib )
 add_executable(fauna
     "lib/tree.cpp"
+    "lib/btree.h"
+    "lib/rbtree.h"
+    "lib/avl-tree.h"
+    "common.h"
     "main.cpp"
-    "program.cpp"
     "animal.cpp" 
     "history.cpp" 
-    "common.h"
+    "program.cpp"
     )
 
 target_compile_features( fauna PUBLIC cxx_std_17 )
