@@ -51,12 +51,14 @@ private:
   void print_help() const;
   void print_exit() const;
   void print_reading_file() const;
+  void print_writing_file() const;
   void print_include_animal() const;
 
   void print_animals() const;
   void print_animal_history() const;
 
   void read_file();
+  void save_file();
   void read_animal();
   void remove_animal();
 

@@ -30,6 +30,7 @@ public:
   void insert_history(history_item& history);
   void print_history() const;
   void print() const;
+  std::string write() const;
 
 };
 

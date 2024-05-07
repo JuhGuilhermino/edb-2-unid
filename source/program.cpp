@@ -147,6 +147,29 @@ void Program::remove_animal() {
   m_msg = "Animal " + std::to_string(animal_id) + " removido!";
 }
 
+void Program::save_file() {
+  std::ofstream ofs(m_file_path);
+
+  auto itr = m_animals.begin();
+  if (ofs.is_open()) {
+
+    while (itr != m_animals.end()) {
+      std::shared_ptr<Animal> animal = *itr;
+
+      ofs << animal->write();
+
+      ++itr;
+    }
+
+    ofs.close();
+
+    m_msg = "Arquivo salvo!";
+  }
+  else {
+    m_error_msg = "Não foi possível abrir o caminho especificado!";
+  }
+}
+
 #pragma endregion
 
 void Program::process_events() {
@@ -185,6 +208,10 @@ void Program::process_events() {
   else if (m_state == e_state::STARTING) {
 
   }
+  else if (m_state == e_state::SAVING_FILE) {
+    std::getline(std::cin, m_file_path);
+    save_file();
+  }
   else {
     std::string line;
     std::getline(std::cin, line);
@@ -205,7 +232,9 @@ void Program::update() {
     else if (m_selected_option == e_menu_option::CONSULT_ANIMALS) {
       m_state = e_state::CONSULTING_ANIMALS;
     }
-    else if (m_selected_option == e_menu_option::SAVE_FILE) {}
+    else if (m_selected_option == e_menu_option::SAVE_FILE) {
+      m_state = e_state::SAVING_FILE;
+    }
     else if (m_selected_option == e_menu_option::REMOVE_ANIMAL) {
       m_state = e_state::REMOVING_ANIMAL;
     }
@@ -234,7 +263,7 @@ void Program::update() {
     m_state = e_state::WELCOMING;
   }
   else if (m_state == e_state::SAVING_FILE) {
-
+    m_state = e_state::READING_MENU_OPT;
   }
   else if (m_state == e_state::REMOVING_ANIMAL) {
 
@@ -273,7 +302,9 @@ void Program::render() const {
       << ">>> ";
   }
   else if (m_state == e_state::CONSULTING_ANIMAL_HISTORY) {}
-  else if (m_state == e_state::SAVING_FILE) {}
+  else if (m_state == e_state::SAVING_FILE) {
+    print_writing_file();
+  }
   else if (m_state == e_state::READING_FILE) {
 
   }
@@ -289,6 +320,12 @@ void Program::print_welcome() const {
 
 void Program::print_reading_file() const {
   std::cout << YELLOW << ">>> Lendo arquivo (" << BOLD << m_file_path << RESET << YELLOW << ")...\n\n";
+}
+
+void Program::print_writing_file() const {
+  std::cout << YELLOW
+    << "Digite o caminho do arquivo:\n"
+    << ">>> ";
 }
 
 void Program::print_menu() const {
