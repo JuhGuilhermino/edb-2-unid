@@ -4,12 +4,10 @@
 #include <string>
 #include "common.h"
 
-using namespace fauna;
-
 class HistoryItem {
 private:
 
-  fauna::Date m_date; //!< Data de inspeção
+  common::Date m_date; //!< Data de inspeção
   float m_temperature; //!< Temperatura em ºC
   float m_height; //!< Altura em cm
   float m_weight; //!< Peso em Kg
