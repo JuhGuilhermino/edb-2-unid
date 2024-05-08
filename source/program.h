@@ -20,6 +20,7 @@ private:
     WELCOMING,
 
     INCLUDING_ANIMAL,
+    INCLUDING_ANIMAL_HISTORY,
     REMOVING_ANIMAL,
     READING_ANIMAL,
     CONSULTING_ANIMALS,
@@ -33,6 +34,7 @@ private:
     INCLUDE_ANIMAL = 1,
     CONSULT_ANIMALS,
     READ_ANIMAL,
+    INCLUDE_ANIMAL_HISTORY,
     REMOVE_ANIMAL,
     SAVE_FILE,
     HELP,
@@ -56,6 +58,7 @@ private:
   void print_reading_file() const;
   void print_writing_file() const;
   void print_include_animal() const;
+  void print_include_animal_history() const;
 
   void print_animals() const;
   void print_animal_history() const;
@@ -63,10 +66,12 @@ private:
   void read_file();
   void save_file();
   void read_animal();
+  void read_animal_history();
   void search_animal();
   void remove_animal();
 
   Animal parse_animal(const std::string& animals_str);
+  HistoryItem parse_history(const std::string& history_str);
 
 public:
   void initialize(int argc, char* argv[]);

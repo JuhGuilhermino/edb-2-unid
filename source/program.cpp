@@ -145,6 +145,35 @@ Animal Program<Tree>::parse_animal(const std::string& animal_str) {
 }
 
 template <typename Tree>
+HistoryItem Program<Tree>::parse_history(const std::string& history_str) {
+  HistoryItem history;
+
+  auto tokens = tokenize(history_str, ';');
+
+  if (tokens.size() < 6) {
+    throw std::invalid_argument("Invalid history string!");
+  }
+
+  history.m_temperature = std::stoi(tokens.at(1));
+  history.m_height = std::stof(tokens.at(2));
+  history.m_weight = std::stof(tokens.at(3));
+  history.m_blood_collected = tokens.at(4) == "y" || tokens.at(4) == "Y";
+  history.m_is_ok = tokens.at(5) == "y" || tokens.at(5) == "Y";
+
+  try {
+    history.m_note = tokens.at(6);
+  }
+  catch (const std::out_of_range& err) { /* Não foi passada Nota */ }
+
+  auto date = tokenize(tokens.at(0), '/');
+  common::Date date_obj(std::stoi(date.at(0)), std::stoi(date.at(1)), std::stoi(date.at(2)));
+
+  history.m_date = date_obj;
+
+  return history;
+}
+
+template <typename Tree>
 void Program<Tree>::read_animal() {
   Animal animal;
 
@@ -158,6 +187,39 @@ void Program<Tree>::read_animal() {
 }
 
 template <typename Tree>
+void Program<Tree>::read_animal_history() {
+  std::string line;
+  std::cout << BLUE << "Digite o ID do animal:\n"
+    << RESET << ">>> ";
+  std::getline(std::cin, line);
+
+  int animal_id = -1;
+  try
+  {
+    animal_id = std::stoi(line);
+  }
+  catch (const std::exception& e)
+  {
+    m_error_msg = "Código de animal inválido!";
+    return;
+  }
+
+  print_include_animal_history();
+
+  std::getline(std::cin, line);
+  HistoryItem history = parse_history(line);
+
+  auto duration = measure_execution_time([&]() {
+    m_animals.search(m_animals.root, animal_id)->value->insert_history(std::make_shared<HistoryItem>(history));
+    });
+
+  std::cout << CYAN << "\nTempo de busca: " << duration << " ms\n";
+  std::cout << GREEN << "\n>>> Pressione Enter para voltar ao menu...\n";
+
+  m_msg = "Histórico adicionado ao animal " + std::to_string(animal_id) + ".";
+}
+
+template <typename Tree>
 void Program<Tree>::search_animal() {
   std::string line;
   std::getline(std::cin, line);
@@ -167,6 +229,7 @@ void Program<Tree>::search_animal() {
     std::shared_ptr<Animal> animal = m_animals.search(m_animals.root, key)->value;
 
     animal->print();
+    animal->print_history();
     });
 
   std::cout << CYAN << "\nTempo de busca: " << duration << " ms\n";
@@ -189,7 +252,6 @@ void Program<Tree>::save_file() {
   std::ofstream ofs(m_file_path);
 
   if (ofs.is_open()) {
-    // TODO: Salvar arquivo
 
     ofs.close();
 
@@ -232,6 +294,9 @@ void Program<Tree>::process_events() {
   }
   else if (m_state == e_state::INCLUDING_ANIMAL) {
     read_animal();
+  }
+  else if (m_state == e_state::INCLUDING_ANIMAL_HISTORY) {
+    read_animal_history();
   }
   else if (m_state == e_state::REMOVING_ANIMAL) {
     remove_animal();
@@ -279,11 +344,15 @@ void Program<Tree>::update() {
     else if (m_selected_option == e_menu_option::READ_ANIMAL) {
       m_state = e_state::READING_ANIMAL;
     }
+    else if (m_selected_option == e_menu_option::INCLUDE_ANIMAL_HISTORY) {
+      m_state = e_state::INCLUDING_ANIMAL_HISTORY;
+    }
     else if (m_selected_option == e_menu_option::INVALID) {}
   }
   else if (
     m_state == e_state::HELPING
     || m_state == e_state::INCLUDING_ANIMAL
+    || m_state == e_state::INCLUDING_ANIMAL_HISTORY
     || m_state == e_state::CONSULTING_ANIMALS
     || m_state == e_state::READING_ANIMAL
     || m_state == e_state::CONSULTING_ANIMAL_HISTORY
@@ -335,6 +404,9 @@ void Program<Tree>::render() const {
   }
   else if (m_state == e_state::INCLUDING_ANIMAL) {
     print_include_animal();
+  }
+  else if (m_state == e_state::INCLUDING_ANIMAL_HISTORY) {
+    // print_include_animal();
   }
   else if (m_state == e_state::CONSULTING_ANIMALS) {
     print_animals();
@@ -388,10 +460,11 @@ void Program<Tree>::print_menu() const {
     << "| 1: Incluir animal                                                      |\n"
     << "| 2: Consultar animais                                                   |\n"
     << "| 3: Ler animal                                                          |\n"
-    << "| 4: Remover animal                                                      |\n"
-    << "| 5: Salvar arquivo                                                      |\n"
-    << "| 6: Ajuda                                                               |\n"
-    << "| 7: Sair                                                                |\n"
+    << "| 4: Incluir histórico de monitoramento de animal                        |\n"
+    << "| 5: Remover animal                                                      |\n"
+    << "| 6: Salvar arquivo                                                      |\n"
+    << "| 7: Ajuda                                                               |\n"
+    << "| 8: Sair                                                                |\n"
     << "--------------------------------------------------------------------------\n\n"
     << RED << "ERROR: [" << m_error_msg << "]\n" << RESET
     << YELLOW << "MSG: [" << m_msg << "]\n\n" << RESET
@@ -404,6 +477,15 @@ void Program<Tree>::print_include_animal() const {
     << BLUE << BOLD << "Inclusão de animal\n" << RESET
     << YELLOW << "Insira os dados no formato:\n"
     << "<ID (numérico)>;<Nome>;<Espécie>;<Gênero>;<Data de Monitoramento (dd/MM/yyyy)>;<Data de Nascimento (dd/MM/yyyy)>\n\n"
+    << RESET << ">>> ";
+}
+
+template <typename Tree>
+void Program<Tree>::print_include_animal_history() const {
+  std::cout
+    << BLUE << BOLD << "Inclusão de histórico de monitoramento de animal\n" << RESET
+    << YELLOW << "Insira os dados no formato:\n"
+    << "<Data de Monitoramento (dd/MM/yyyy)>;<Peso>;<Altura>;<Coletou sangue (y/n)>;<Animal OK (y/n)>;<Nota (opcional)>\n\n"
     << RESET << ">>> ";
 }
 

@@ -27,7 +27,7 @@ public:
   common::Date m_monitored_at;
   common::Date m_born_at;
 
-  void insert_history(history_item& history);
+  void insert_history(history_item history);
   void print_history() const;
   void print() const;
   std::string write() const;
