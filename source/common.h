@@ -16,6 +16,18 @@ namespace common {
     Date(unsigned short day, unsigned short month, unsigned short year) : day(day), month(month), year(year) {};
     Date() {};
 
+    static std::string to_string(Date date) {
+      auto dday = std::to_string(date.day);
+      if (dday.size() == 1) dday = "0" + dday;
+
+      auto dmonth = std::to_string(date.month);
+      if (dmonth.size() == 1) dmonth = "0" + dmonth;
+
+      auto dyear = std::to_string(date.year);
+
+      return  dday + "/" + dmonth + "/" + dyear;
+    }
+
     friend std::ostream& operator<<(std::ostream& os, const Date& date) {
       os << date.day << "/" << date.month << "/" << date.year;
       return os;

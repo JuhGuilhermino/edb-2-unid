@@ -1,5 +1,6 @@
 #include "program.h"
 #include <iostream>
+#include <chrono>
 #include <string>
 #include <fstream>
 #include <sstream>
@@ -31,6 +32,7 @@ std::vector<std::string> tokenize(const std::string& str, const char& separator)
 
   return tokens;
 }
+
 std::string padStart(const std::string& input, size_t targetLength, char padChar = ' ') {
   if (input.length() >= targetLength) {
     return input;
@@ -38,21 +40,34 @@ std::string padStart(const std::string& input, size_t targetLength, char padChar
   return std::string(targetLength - input.length(), padChar) + input;
 }
 
+template<typename Func>
+long long measure_execution_time(Func func) {
+  auto start = std::chrono::high_resolution_clock::now();
+
+  func();
+
+  auto end = std::chrono::high_resolution_clock::now();
+  return std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+}
+
 #pragma endregion
 
 #pragma region CONFIG_METHODS
 
-void Program::usage() const {
+template <typename Tree>
+void Program<Tree>::usage() const {
   std::cerr
     << "Usage: fauna [-f <file_relative_path>] [-h, --help]\n"
     << "  Opções:\n"
     << "    -f     <file_relative_path> Caminho do arquivo de registro de faun.\n"
-    << "    -h, --help       Imprime esse texto de ajuda.\n";
+    << "    -h, --help           Imprime esse texto de ajuda.\n"
+    << "    -t, --tree <avl, br> Tipo de árvore utilizada para armazenar os dados. AVL ou Rubro-Negra.\n";
 
   exit(0);
 }
 
-void Program::read_file() {
+template <typename Tree>
+void Program<Tree>::read_file() {
   std::ifstream ifs(m_file_path);
   std::ostringstream oss;
 
@@ -66,7 +81,8 @@ void Program::read_file() {
       if (line.empty()) continue;
 
       Animal animal = parse_animal(line);
-      m_animals.push_back(std::make_shared<Animal>(animal));
+      auto animal_ptr = std::make_shared<Animal>(animal);
+      m_animals.root = m_animals.insert(m_animals.root, animal_ptr, animal.m_id);
     }
   }
   else {
@@ -76,7 +92,8 @@ void Program::read_file() {
   std::cout << oss.str() << "\n\n";
 }
 
-void Program::initialize(int argc, char* argv[]) {
+template <typename Tree>
+void Program<Tree>::initialize(int argc, char* argv[]) {
   m_state = e_state::STARTING;
   m_error_msg = "";
   m_file_path = ".\\data\\fauna-1.txt";
@@ -96,7 +113,8 @@ void Program::initialize(int argc, char* argv[]) {
   }
 }
 
-bool Program::has_finished() {
+template <typename Tree>
+bool Program<Tree>::has_finished() {
   return m_state == e_state::QUITTING;
 }
 
@@ -104,7 +122,8 @@ bool Program::has_finished() {
 
 #pragma region USER_INTERACTIONS
 
-Animal Program::parse_animal(const std::string& animal_str) {
+template <typename Tree>
+Animal Program<Tree>::parse_animal(const std::string& animal_str) {
   Animal animal;
 
   auto tokens = tokenize(animal_str, ';');
@@ -125,19 +144,37 @@ Animal Program::parse_animal(const std::string& animal_str) {
   return animal;
 }
 
-void Program::read_animal() {
+template <typename Tree>
+void Program<Tree>::read_animal() {
   Animal animal;
 
   std::string line;
   std::getline(std::cin, line);
 
   animal = parse_animal(line);
-
-  m_animals.push_back(std::make_shared<Animal>(animal));
+  auto animal_ptr = std::make_shared<Animal>(animal);
+  m_animals.root = m_animals.insert(m_animals.root, animal_ptr, animal.m_id);
   m_msg = "Animal adicionado!";
 }
 
-void Program::remove_animal() {
+template <typename Tree>
+void Program<Tree>::search_animal() {
+  std::string line;
+  std::getline(std::cin, line);
+
+  int key = std::stoi(line);
+  auto duration = measure_execution_time([&]() {
+    std::shared_ptr<Animal> animal = m_animals.search(m_animals.root, key)->value;
+
+    animal->print();
+    });
+
+  std::cout << CYAN << "\nTempo de busca: " << duration << " ms\n";
+  std::cout << GREEN << "\n>>> Pressione Enter para voltar ao menu...\n";
+}
+
+template <typename Tree>
+void Program<Tree>::remove_animal() {
   int animal_id;
   std::string line;
   std::getline(std::cin, line);
@@ -147,19 +184,12 @@ void Program::remove_animal() {
   m_msg = "Animal " + std::to_string(animal_id) + " removido!";
 }
 
-void Program::save_file() {
+template <typename Tree>
+void Program<Tree>::save_file() {
   std::ofstream ofs(m_file_path);
 
-  auto itr = m_animals.begin();
   if (ofs.is_open()) {
-
-    while (itr != m_animals.end()) {
-      std::shared_ptr<Animal> animal = *itr;
-
-      ofs << animal->write();
-
-      ++itr;
-    }
+    // TODO: Salvar arquivo
 
     ofs.close();
 
@@ -172,7 +202,8 @@ void Program::save_file() {
 
 #pragma endregion
 
-void Program::process_events() {
+template <typename Tree>
+void Program<Tree>::process_events() {
   m_error_msg = "";
   m_msg = "";
   if (m_state == e_state::READING_MENU_OPT) {
@@ -212,13 +243,20 @@ void Program::process_events() {
     std::getline(std::cin, m_file_path);
     save_file();
   }
+  else if (m_state == e_state::READING_ANIMAL) {
+    search_animal();
+
+    std::string line;
+    std::getline(std::cin, line);
+  }
   else {
     std::string line;
     std::getline(std::cin, line);
   }
 }
 
-void Program::update() {
+template <typename Tree>
+void Program<Tree>::update() {
   // std::cout << ">>> Update: " << m_state << "\n";
 
   if (m_state == e_state::READING_MENU_OPT) {
@@ -238,13 +276,16 @@ void Program::update() {
     else if (m_selected_option == e_menu_option::REMOVE_ANIMAL) {
       m_state = e_state::REMOVING_ANIMAL;
     }
-    else if (m_selected_option == e_menu_option::READ_ANIMAL) {}
+    else if (m_selected_option == e_menu_option::READ_ANIMAL) {
+      m_state = e_state::READING_ANIMAL;
+    }
     else if (m_selected_option == e_menu_option::INVALID) {}
   }
   else if (
     m_state == e_state::HELPING
     || m_state == e_state::INCLUDING_ANIMAL
     || m_state == e_state::CONSULTING_ANIMALS
+    || m_state == e_state::READING_ANIMAL
     || m_state == e_state::CONSULTING_ANIMAL_HISTORY
     || m_state == e_state::REMOVING_ANIMAL
     ) {
@@ -276,7 +317,9 @@ void Program::update() {
   }
 }
 
-void Program::render() const {
+template <typename Tree>
+
+void Program<Tree>::render() const {
   if (m_state == e_state::WELCOMING) {
     print_welcome();
   }
@@ -296,7 +339,9 @@ void Program::render() const {
   else if (m_state == e_state::CONSULTING_ANIMALS) {
     print_animals();
   }
-  else if (m_state == e_state::READING_ANIMAL) {}
+  else if (m_state == e_state::READING_ANIMAL) {
+    print_reading_animal();
+  }
   else if (m_state == e_state::REMOVING_ANIMAL) {
     std::cout << "Digite o código do animal:\n"
       << ">>> ";
@@ -312,27 +357,31 @@ void Program::render() const {
 
 #pragma region RENDER_METHODS
 
-void Program::print_welcome() const {
+template <typename Tree>
+void Program<Tree>::print_welcome() const {
   std::cout
     << BLUE << "Mensagem de boas vindas\n\n"
     << GREEN << ">>> Pressione Enter para iniciar...";
 }
 
-void Program::print_reading_file() const {
+template <typename Tree>
+void Program<Tree>::print_reading_file() const {
   std::cout << YELLOW << ">>> Lendo arquivo (" << BOLD << m_file_path << RESET << YELLOW << ")...\n\n";
 }
 
-void Program::print_writing_file() const {
+template <typename Tree>
+void Program<Tree>::print_writing_file() const {
   std::cout << YELLOW
     << "Digite o caminho do arquivo:\n"
     << ">>> ";
 }
 
-void Program::print_menu() const {
+template <typename Tree>
+void Program<Tree>::print_menu() const {
   std::cout << "\n\n"
     << BLUE << "----------------------- Gestão de fauna do parque ------------------------\n"
     << "| "
-    << padStart(std::to_string(1), 4, '0')
+    << padStart(std::to_string(m_animals.size()), 4, '0')
     << " Animais cadastrados                                               |\n"
     << "| Selecione uma opção:                                                   |\n"
     << "|                                                                        |\n"
@@ -349,7 +398,8 @@ void Program::print_menu() const {
     << ">>> ";
 }
 
-void Program::print_include_animal() const {
+template <typename Tree>
+void Program<Tree>::print_include_animal() const {
   std::cout
     << BLUE << BOLD << "Inclusão de animal\n" << RESET
     << YELLOW << "Insira os dados no formato:\n"
@@ -357,28 +407,40 @@ void Program::print_include_animal() const {
     << RESET << ">>> ";
 }
 
-void Program::print_animals() const {
-  auto itr = m_animals.begin();
+template <typename Tree>
+void Program<Tree>::print_animals() const {
   std::cout << BLUE << BOLD << "Animais:\n\n" << RESET;
 
-  while (itr != m_animals.end()) {
-    std::shared_ptr<Animal> animal = *itr;
+  std::cout << BLUE << BOLD
+    << "------------------------------------------------------------------------------------\n"
+    << "| ID   | Nome             | Espécie          | Gênero    | Monitorado | Nascimento |\n"
+    << "------------------------------------------------------------------------------------\n"
+    << RESET;
 
-    animal->print();
+  m_animals.inorder(m_animals.root);
 
-    ++itr;
-  }
-
+  std::cout << BLUE << BOLD
+    << "------------------------------------------------------------------------------------\n"
+    << " " << m_animals.size() << " animais.\n\n";
   std::cout << GREEN << "\n>>> Pressione Enter para voltar ao menu...\n";
 }
 
-void Program::print_help() const {
+template<typename Tree>
+void Program<Tree>::print_reading_animal() const {
+  std::cout
+    << BLUE << BOLD << "Consulta de animal. Digite o ID do animal: \n"
+    << RESET << ">>> ";
+}
+
+template <typename Tree>
+void Program<Tree>::print_help() const {
   std::cout
     << BLUE << "<HELP>\n"
     << GREEN << ">>> Pressione Enter para voltar ao menu...\n";
 }
 
-void Program::print_exit() const {
+template <typename Tree>
+void Program<Tree>::print_exit() const {
   std::cout
     << "<QUITTING>\n\n";
 }
