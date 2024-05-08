@@ -10,4 +10,13 @@
 
 ---
 
+# Implementações
+
+[x] Inclusão de animal
+[] Remoção de animal
+[x] Consulta de animais
+[] Consulta de histórico de animal
+[x] Leitura de arquivo
+[x] Escrita de arquivo
+
 &copy; DIMAp/UFRN 2024.

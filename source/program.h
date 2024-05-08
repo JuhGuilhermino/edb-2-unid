@@ -4,12 +4,14 @@
 #include <vector>
 #include <memory>
 #include "animal.h"
+#include "lib/avl-tree.h"
 
+template<typename Tree>
 class Program
 {
 private:
-  using animal = std::shared_ptr<Animal>;
-  using fauna = std::vector<animal>;
+  // using animal = std::shared_ptr<Animal>;
+  // using fauna = Tree<animal>;
 
   enum e_state {
     STARTING,
@@ -18,6 +20,7 @@ private:
     WELCOMING,
 
     INCLUDING_ANIMAL,
+    INCLUDING_ANIMAL_HISTORY,
     REMOVING_ANIMAL,
     READING_ANIMAL,
     CONSULTING_ANIMALS,
@@ -31,6 +34,7 @@ private:
     INCLUDE_ANIMAL = 1,
     CONSULT_ANIMALS,
     READ_ANIMAL,
+    INCLUDE_ANIMAL_HISTORY,
     REMOVE_ANIMAL,
     SAVE_FILE,
     HELP,
@@ -43,24 +47,31 @@ private:
   e_menu_option m_selected_option;
   std::string m_error_msg;
   std::string m_msg;
-  fauna m_animals;
+  Tree m_animals;
 
   //!< Methods
   void print_welcome() const;
   void print_menu() const;
   void print_help() const;
   void print_exit() const;
+  void print_reading_animal() const;
   void print_reading_file() const;
+  void print_writing_file() const;
   void print_include_animal() const;
+  void print_include_animal_history() const;
 
   void print_animals() const;
   void print_animal_history() const;
 
   void read_file();
+  void save_file();
   void read_animal();
+  void read_animal_history();
+  void search_animal();
   void remove_animal();
 
   Animal parse_animal(const std::string& animals_str);
+  HistoryItem parse_history(const std::string& history_str);
 
 public:
   void initialize(int argc, char* argv[]);
@@ -71,5 +82,7 @@ public:
   void render() const;
   void usage() const;
 };
+
+template class Program<avl::AVLTree<std::shared_ptr<Animal>>>;
 
 #endif
