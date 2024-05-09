@@ -2,11 +2,11 @@
 
 - Nome: _Rafael Andrade Mirapalheta_
 - Email: *devrafael72@gmail.com*
-- Turma: _DIM0176 - EDBII - T01 (2023.2)_
+- Turma: _DIM0176 - EDBII - T01 (2024.1)_
 
-- Nome:
-- Email:
-- Turma:
+- Nome: _Júlia Maria Azevedo Guilhermino_
+- Email: *juh.guilhermino03@gmail.com*
+- Turma: _DIM0176 - EDBII - T01 (2024.1)_
 
 ---
 
