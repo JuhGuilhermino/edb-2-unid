@@ -17,7 +17,6 @@ set( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COMPILE_FLAGS} ${PREPROCESSING_F
 #Include dir
 include_directories( lib )
 add_executable(fauna
-    "lib/tree.cpp"
     "lib/btree.h"
     "lib/rbtree.h"
     "lib/avl-tree.h"

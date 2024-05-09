@@ -29,7 +29,7 @@ namespace common {
     }
 
     friend std::ostream& operator<<(std::ostream& os, const Date& date) {
-      os << date.day << "/" << date.month << "/" << date.year;
+      os << Date::to_string(date);
       return os;
     }
   };

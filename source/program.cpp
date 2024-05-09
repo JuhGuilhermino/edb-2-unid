@@ -72,7 +72,7 @@ void Program<Tree>::read_file() {
   std::ostringstream oss;
 
   if (ifs.is_open()) {
-    oss << ">>> Abrindo arquivo [" << m_file_path << "]\n"
+    oss << BLUE << "\n>>> Abrindo arquivo [" << m_file_path << "]\n"
       << ">>> Processando dados...\n";
 
     while (ifs) {
@@ -80,7 +80,23 @@ void Program<Tree>::read_file() {
       std::getline(ifs, line);
       if (line.empty()) continue;
 
-      Animal animal = parse_animal(line);
+      auto tokens = tokenize(line, ';-h:');
+
+      if (tokens.size() > 2) continue;
+
+      Animal animal = parse_animal(tokens.at(0));
+
+      if (tokens.size() > 1) {
+        std::vector<std::string> historyTokens = tokenize(tokens.at(1), '#');
+
+        auto itr = historyTokens.begin();
+        while (itr != historyTokens.end()) {
+          HistoryItem history = parse_history(*itr);
+          animal.insert_history(std::make_shared<HistoryItem>(history));
+          ++itr;
+        }
+      }
+
       auto animal_ptr = std::make_shared<Animal>(animal);
       m_animals.root = m_animals.insert(m_animals.root, animal_ptr, animal.m_id);
     }
@@ -96,7 +112,7 @@ template <typename Tree>
 void Program<Tree>::initialize(int argc, char* argv[]) {
   m_state = e_state::STARTING;
   m_error_msg = "";
-  m_file_path = ".\\data\\fauna-1.txt";
+
   for (int i = 1; i < argc; i++) {
     std::string current_arg{ argv[i] };
 
@@ -225,14 +241,26 @@ void Program<Tree>::search_animal() {
   std::getline(std::cin, line);
 
   int key = std::stoi(line);
+  std::shared_ptr<Animal> animal = nullptr;
   auto duration = measure_execution_time([&]() {
-    std::shared_ptr<Animal> animal = m_animals.search(m_animals.root, key)->value;
-
-    animal->print();
-    animal->print_history();
+    animal = m_animals.search(m_animals.root, key)->value;
     });
 
-  std::cout << CYAN << "\nTempo de busca: " << duration << " ms\n";
+  if (animal == nullptr) {
+    m_error_msg = "Animal não encontrado";
+    return;
+  }
+
+  std::cout << BLUE << BOLD << "\nAnimal:\n\n" << RESET
+    << "------------------------------------------------------------------------------------\n";
+
+  animal->print();
+
+  std::cout
+    << "------------------------------------------------------------------------------------\n\n";
+  animal->print_history();
+
+  std::cout << CYAN << "Tempo de busca: " << duration << " ms\n";
   std::cout << GREEN << "\n>>> Pressione Enter para voltar ao menu...\n";
 }
 
@@ -242,8 +270,23 @@ void Program<Tree>::remove_animal() {
   std::string line;
   std::getline(std::cin, line);
 
-  animal_id = std::stoi(line);
+  try
+  {
+    animal_id = std::stoi(line);
+  }
+  catch (const std::exception& e)
+  {
+    m_error_msg = "Código de Animal inválido!";
+  }
 
+  auto node = m_animals.deleteNode(m_animals.root, animal_id);
+
+  if (node == nullptr) {
+    m_error_msg = "Animal não encontrado";
+    return;
+  }
+
+  m_animals.root = node;
   m_msg = "Animal " + std::to_string(animal_id) + " removido!";
 }
 
@@ -252,7 +295,7 @@ void Program<Tree>::save_file() {
   std::ofstream ofs(m_file_path);
 
   if (ofs.is_open()) {
-
+    ofs << m_animals.inorder(m_animals.root, true);
     ofs.close();
 
     m_msg = "Arquivo salvo!";
@@ -276,7 +319,7 @@ void Program<Tree>::process_events() {
     try
     {
       auto option_selected = std::stoi(line);
-      if (option_selected > 7 || option_selected < 1)
+      if (option_selected > e_state::QUITTING || option_selected < 1)
         throw std::runtime_error("error");
 
       m_selected_option = (e_menu_option)option_selected;
@@ -285,7 +328,7 @@ void Program<Tree>::process_events() {
     }
     catch (const std::exception& e)
     {
-      m_error_msg = "Invalid option.";
+      m_error_msg = "Opção inválida!";
       m_selected_option = e_menu_option::INVALID;
     }
   }
@@ -415,8 +458,8 @@ void Program<Tree>::render() const {
     print_reading_animal();
   }
   else if (m_state == e_state::REMOVING_ANIMAL) {
-    std::cout << "Digite o código do animal:\n"
-      << ">>> ";
+    std::cout << BLUE << "Digite o código do animal:\n"
+      << RESET << ">>> ";
   }
   else if (m_state == e_state::CONSULTING_ANIMAL_HISTORY) {}
   else if (m_state == e_state::SAVING_FILE) {

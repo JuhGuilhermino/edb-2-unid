@@ -39,10 +39,12 @@ int main(int argc, char* argv[])
   std::string tree_type = get_tree(argc, argv);
 
   if (tree_type == "avl") {
+    std::cout << ">>> Arvore AVL selecionada.\n";
     run_program<avl::AVLTree<std::shared_ptr<Animal>>>(argc, argv);
   }
   else if (tree_type == "br") {
-    run_program<avl::AVLTree<std::shared_ptr<Animal>>>(argc, argv); // TODO: implementar arvore RN e trocar o template
+    std::cout << ">>> Arvore Rubro-Negra selecionada.\n";
+    run_program<rb::RedBlackTree<std::shared_ptr<Animal>>>(argc, argv); // TODO: implementar arvore RN e trocar o template
   }
 
   return 0;

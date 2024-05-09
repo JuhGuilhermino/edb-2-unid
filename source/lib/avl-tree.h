@@ -1,5 +1,6 @@
 #include <iostream>
-#include <algorithm> // Para std::max
+#include <algorithm> 
+#include <sstream> 
 #include "../animal.h"
 namespace avl {
 
@@ -24,6 +25,19 @@ namespace avl {
 
     AVLTree() : root(nullptr), m_size(0) {}
 
+
+    ~AVLTree() {
+      destroyTree(root);
+    }
+
+    void destroyTree(Node<T>* root) {
+      if (root != nullptr) {
+        destroyTree(root->left);
+        destroyTree(root->right);
+        delete root;
+      }
+    }
+
     int size() const { return m_size; }
 
     int height(Node<T>* N) {
@@ -32,7 +46,7 @@ namespace avl {
       return N->height;
     }
 
-    int getBalanceFactor(Node<T>* N) {
+    int getBalance(Node<T>* N) {
       if (N == nullptr)
         return 0;
       return height(N->left) - height(N->right);
@@ -81,7 +95,7 @@ namespace avl {
       node->height = 1 + std::max(height(node->left), height(node->right));
 
       // Verifica se este nó se tornou desbalanceado
-      int balance = getBalanceFactor(node);
+      int balance = getBalance(node);
 
       // Se o nó se tornou desbalanceado, então há 4 casos
 
@@ -109,7 +123,7 @@ namespace avl {
     }
 
     Node<T>* search(Node<T>* root, int key) {
-      if (root->key == key) return root;
+      if (root == nullptr || root->key == key) return root;
 
       else if (key < root->key)
         return search(root->left, key);
@@ -125,6 +139,78 @@ namespace avl {
 
         inorder(root->right);
       }
+    }
+
+    std::string inorder(Node<T>* root, bool save) const {
+      std::ostringstream oss;
+
+      if (root != nullptr) {
+        oss << inorder(root->left, true);
+        oss << root->value->write();
+        oss << inorder(root->right, true);
+      }
+
+      return oss.str();
+    }
+
+    Node<T>* minValueNode(Node<T>* node) {
+      Node<T>* current = node;
+      while (current->left != nullptr)
+        current = current->left;
+      return current;
+    }
+
+    Node<T>* deleteNode(Node<T>* root, int key) {
+      if (root == nullptr)
+        return root;
+
+      if (key < root->key)
+        root->left = deleteNode(root->left, key);
+      else if (key > root->key)
+        root->right = deleteNode(root->right, key);
+      else {
+        if (root->left == nullptr || root->right == nullptr) {
+          Node<T>* temp = root->left ? root->left : root->right;
+          if (temp == nullptr) {
+            temp = root;
+            root = nullptr;
+          }
+          else {
+            *root = *temp;
+            root->key = temp->key;
+          }
+          delete temp;
+        }
+        else {
+          Node<T>* temp = minValueNode(root->right);
+          root->key = temp->key;
+          root->value = temp->value;
+          --m_size;
+          root->right = deleteNode(root->right, temp->key);
+        }
+      }
+
+      if (root == nullptr)
+        return root;
+
+      root->height = 1 + std::max(height(root->left), height(root->right));
+
+      int balance = getBalance(root);
+
+      if (balance > 1 && getBalance(root->left) >= 0)
+        return rightRotate(root);
+      if (balance > 1 && getBalance(root->left) < 0) {
+        root->left = leftRotate(root->left);
+        return rightRotate(root);
+      }
+      if (balance < -1 && getBalance(root->right) <= 0)
+        return leftRotate(root);
+      if (balance < -1 && getBalance(root->right) > 0) {
+        root->right = rightRotate(root->right);
+        return leftRotate(root);
+      }
+
+      return root;
     }
   };
 

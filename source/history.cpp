@@ -18,7 +18,7 @@ void HistoryItem::print() const {
     << pad_start(std::to_string(m_id), 4, '0') << " | "
     << m_date << " | "
     << std::setw(11) << std::left << m_temperature << " | "
-    << std::setw(11) << std::left << m_weight << " | "
+    << std::setw(10) << std::left << m_weight << " | "
     << std::setw(9) << std::left << m_height << " | "
     << std::setw(15) << std::left << collect << " | "
     << ok << " |\n"
