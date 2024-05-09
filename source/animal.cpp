@@ -36,7 +36,7 @@ std::string Animal::write() const {
     << m_born_at;
 
   if (m_history.size() > 0) {
-    oss << "/-h:";
+    oss << ";-h:";
 
     auto itr = m_history.begin();
     while (itr != m_history.end()) {
@@ -90,5 +90,4 @@ void Animal::print_history() const {
   std::cout << BLUE << BOLD
     << "-----------------------------------------------------------------------------------\n"
     << " " << m_history.size() << " Registros.\n\n";
-  std::cout << GREEN << "\n>>> Pressione Enter para voltar ao menu...\n";
 }

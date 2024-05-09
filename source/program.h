@@ -5,6 +5,7 @@
 #include <memory>
 #include "animal.h"
 #include "lib/avl-tree.h"
+#include "lib/rbtree.h"
 
 template<typename Tree>
 class Program
@@ -84,5 +85,6 @@ public:
 };
 
 template class Program<avl::AVLTree<std::shared_ptr<Animal>>>;
+template class Program<rb::RedBlackTree<std::shared_ptr<Animal>>>;
 
 #endif
